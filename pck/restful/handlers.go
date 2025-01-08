@@ -18,7 +18,7 @@ func (app *restfulApi) serverStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *restfulApi) getMediaById(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
+	id := chi.URLParam(r, "id")
 	if id == "" {
 		app.badRequest(w, r, utils.ErrMissingID)
 		return

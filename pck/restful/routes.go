@@ -17,11 +17,11 @@ func (app *restfulApi) Routes() http.Handler {
 	})
 
 	router.Route("/api/media", func(r chi.Router) {
-		r.Get("/v1", app.getMediaById)
+		r.Get("/v1/{id}", app.getMediaById)
+		r.Get("/v1", app.getAllMedia)
 		r.Delete("/v1/{id}", app.deleteMediaById)
 		r.Post("/v1", app.addNewMedia)
 		r.Put("/v1/{id}", app.updateMedia)
-		r.Get("/v1/all", app.getAllMedia)
 	})
 
 	return router
