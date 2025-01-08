@@ -27,11 +27,11 @@ func main() {
 	}
 	logger.Info("Configuration loaded", "env", config.Env)
 
-	dbConnection, dbError := postgresql.InitDB()
+	newConn, dbError := postgresql.InitDB()
 	if dbError != nil {
 		log.Fatal(dbError)
 	}
-	defer dbConnection.Close(context.Background())
+	defer newConn.Close(context.Background())
 
 	healthcheck := healthcheck.New()
 

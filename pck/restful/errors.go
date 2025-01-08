@@ -43,6 +43,11 @@ func (app *restfulApi) notFound(w http.ResponseWriter, r *http.Request) {
 	app.errorMessage(w, r, http.StatusNotFound, message, nil)
 }
 
+func (app *restfulApi) somethingWentWrong(w http.ResponseWriter, r *http.Request) {
+	message := "Something went wrong"
+	app.errorMessage(w, r, http.StatusInternalServerError, message, nil)
+}
+
 func (app *restfulApi) methodNotAllowed(w http.ResponseWriter, r *http.Request) {
 	message := fmt.Sprintf("The %s method is not supported for this resource", r.Method)
 	app.errorMessage(w, r, http.StatusMethodNotAllowed, message, nil)

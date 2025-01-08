@@ -12,10 +12,13 @@ var dbConnection *pgx.Conn
 
 func InitDB() (*pgx.Conn, error) {
 	globalConfig := config.GetConfig()
-	dbConnection, err := pgx.Connect(context.Background(), globalConfig.DatabaseUrl)
+	newConn, err := pgx.Connect(context.Background(), globalConfig.DatabaseUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+
+	// Assign the new connection to the global variable // TODO: remove global variable
+	dbConnection = newConn
 
 	// SQL statement to create the `media` table if it doesn't exist
 	createMediaTableSQL := `
@@ -28,15 +31,15 @@ func InitDB() (*pgx.Conn, error) {
             mimeType TEXT NOT NULL,               
             size INTEGER NOT NULL,               
             tags TEXT,                          
-            mediaData BYTEA NOT NULL         
+            mediaData TEXT NOT NULL         
         );
     `
-	_, err = dbConnection.Exec(context.Background(), createMediaTableSQL)
+	_, err = newConn.Exec(context.Background(), createMediaTableSQL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create media table: %w", err)
 	}
 
-	return dbConnection, nil
+	return newConn, nil
 }
 
 func GetDBConnection() *pgx.Conn {
