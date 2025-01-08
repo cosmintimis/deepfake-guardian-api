@@ -103,3 +103,15 @@ func (app *restfulApi) updateMedia(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, r, err)
 	}
 }
+
+func (app *restfulApi) getAllMedia(w http.ResponseWriter, r *http.Request) {
+	allMedia, err := app.mediaRepository.GetAll()
+	if err != nil {
+		app.somethingWentWrong(w, r)
+		return
+	}
+	err = JSON(w, http.StatusOK, allMedia)
+	if err != nil {
+		app.serverError(w, r, err)
+	}
+}

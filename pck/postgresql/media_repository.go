@@ -172,3 +172,35 @@ func (mr *mediaRespository) Delete(id string) (bool, error) {
 	}
 	return true, nil
 }
+
+func (mr *mediaRespository) GetAll() ([]models.Media, error) {
+	dbConnection := GetDBConnection()
+	if dbConnection == nil {
+		mr.logger.Error("failed to get db connection")
+		return nil, fmt.Errorf("failed to get db connection")
+	}
+	rows, err := dbConnection.Query(context.Background(), "SELECT id, title, description, location, type, mimeType, size, tags, mediaData FROM media")
+	if err != nil {
+		mr.logger.Error("failed to get all media", slog.Any("error", err))
+		return nil, fmt.Errorf("failed to get all media: %w", err)
+	}
+	defer rows.Close()
+
+	var mediaList []models.Media
+	for rows.Next() {
+		var media models.Media
+		err := rows.Scan(&media.Id, &media.Title, &media.Description, &media.Location, &media.Type, &media.MimeType, &media.Size, &media.Tags, &media.MediaData)
+		if err != nil {
+			mr.logger.Error("failed to scan media row", slog.Any("error", err))
+			return nil, fmt.Errorf("failed to scan media row: %w", err)
+		}
+		mediaList = append(mediaList, media)
+	}
+
+	if err := rows.Err(); err != nil {
+		mr.logger.Error("error occurred during rows iteration", slog.Any("error", err))
+		return nil, fmt.Errorf("error occurred during rows iteration: %w", err)
+	}
+
+	return mediaList, nil
+}

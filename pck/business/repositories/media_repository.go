@@ -7,6 +7,7 @@ type MediaRepository interface {
 	Create(media *MediaPayload) (*models.Media, error)
 	Update(id string, media *MediaPayload) (*models.Media, error)
 	Delete(id string) (bool, error)
+	GetAll() ([]models.Media, error)
 }
 
 type MediaPayload struct {
