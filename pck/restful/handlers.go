@@ -66,7 +66,7 @@ func (app *restfulApi) wsHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (app *restfulApi) broadcastMessage(messageType int, message WebSocketMessage) {
+func (app *restfulApi) broadcastMessage(message WebSocketMessage) {
 	app.connLock.Lock()
 	defer app.connLock.Unlock()
 
