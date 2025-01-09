@@ -18,6 +18,16 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+type WebSocketMessage struct {
+	Type MessageType `json:"type"`
+}
+
+type MessageType string
+
+const (
+	MEDIA_UPDATED MessageType = "media_updated"
+)
+
 func (app *restfulApi) wsHandler(w http.ResponseWriter, r *http.Request) {
 	// Upgrade the HTTP connection to a WebSocket connection
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -56,12 +66,12 @@ func (app *restfulApi) wsHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (app *restfulApi) broadcastMessage(messageType int, message []byte) {
+func (app *restfulApi) broadcastMessage(messageType int, message WebSocketMessage) {
 	app.connLock.Lock()
 	defer app.connLock.Unlock()
 
 	for conn := range app.connections {
-		if err := conn.WriteMessage(messageType, message); err != nil {
+		if err := conn.WriteJSON(message); err != nil {
 			app.logger.Error("WebSocket: Error broadcasting message", "error", err)
 			conn.Close()
 			delete(app.connections, conn) // Remove broken connections
@@ -70,7 +80,6 @@ func (app *restfulApi) broadcastMessage(messageType int, message []byte) {
 }
 
 func (app *restfulApi) serverStatus(w http.ResponseWriter, r *http.Request) {
-	app.broadcastMessage(websocket.TextMessage, []byte("Hello, WebSocket clients!"))
 	data := app.healthcheck.Status()
 	err := JSON(w, http.StatusOK, data)
 	if err != nil {
