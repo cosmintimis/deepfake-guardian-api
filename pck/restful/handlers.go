@@ -2,6 +2,7 @@ package restful
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/cosmintimis/deepfake-guardian-api/pck/business/repositories"
@@ -37,15 +38,27 @@ func (app *restfulApi) wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	// Register the connection
+	// Extract the unique identifier for the client
+	clientID := r.URL.Query().Get("client_id")
+	if clientID == "" {
+		app.serverError(w, r, fmt.Errorf("missing client_id"))
+		conn.Close()
+		return
+	}
+
 	app.connLock.Lock()
-	app.connections[conn] = struct{}{}
+	if existingConn, exists := app.connections[clientID]; exists {
+		// Close the old connection for the client
+		existingConn.Close()
+	}
+	// Register the new connection
+	app.connections[clientID] = conn
 	app.connLock.Unlock()
 
 	defer func() {
 		// Unregister the connection when it is closed
 		app.connLock.Lock()
-		delete(app.connections, conn)
+		delete(app.connections, clientID)
 		app.connLock.Unlock()
 	}()
 
@@ -70,11 +83,12 @@ func (app *restfulApi) broadcastMessage(message WebSocketMessage) {
 	app.connLock.Lock()
 	defer app.connLock.Unlock()
 
-	for conn := range app.connections {
+	for clientId := range app.connections {
+		conn := app.connections[clientId]
 		if err := conn.WriteJSON(message); err != nil {
 			app.logger.Error("WebSocket: Error broadcasting message", "error", err)
 			conn.Close()
-			delete(app.connections, conn) // Remove broken connections
+			delete(app.connections, clientId) // Remove broken connections
 		}
 	}
 }
@@ -123,6 +137,7 @@ func (app *restfulApi) deleteMediaById(w http.ResponseWriter, r *http.Request) {
 		app.somethingWentWrong(w, r)
 		return
 	}
+	app.broadcastMessage(WebSocketMessage{Type: MEDIA_UPDATED})
 	err = JSON(w, http.StatusOK, map[string]bool{"deleted": ok})
 	if err != nil {
 		app.serverError(w, r, err)
@@ -141,6 +156,7 @@ func (app *restfulApi) addNewMedia(w http.ResponseWriter, r *http.Request) {
 		app.somethingWentWrong(w, r)
 		return
 	}
+	app.broadcastMessage(WebSocketMessage{Type: MEDIA_UPDATED})
 	err = JSON(w, http.StatusCreated, createdMedia)
 	if err != nil {
 		app.serverError(w, r, err)
@@ -168,6 +184,7 @@ func (app *restfulApi) updateMedia(w http.ResponseWriter, r *http.Request) {
 		app.somethingWentWrong(w, r)
 		return
 	}
+	app.broadcastMessage(WebSocketMessage{Type: MEDIA_UPDATED})
 	err = JSON(w, http.StatusOK, updatedMedia)
 	if err != nil {
 		app.serverError(w, r, err)

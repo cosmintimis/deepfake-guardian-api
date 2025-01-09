@@ -14,7 +14,7 @@ type restfulApi struct {
 	logger          *slog.Logger
 	healthcheck     healthcheck.Service
 	mediaRepository repositories.MediaRepository
-	connections     map[*websocket.Conn]struct{}
+	connections     map[string]*websocket.Conn
 	connLock        sync.Mutex
 }
 
@@ -23,7 +23,7 @@ func New(logger *slog.Logger, healthcheck healthcheck.Service) *restfulApi {
 		logger:          logger,
 		healthcheck:     healthcheck,
 		mediaRepository: postgresql.NewMediaRepository(logger),
-		connections:     make(map[*websocket.Conn]struct{}),
+		connections:     make(map[string]*websocket.Conn),
 		connLock:        sync.Mutex{},
 	}
 }
