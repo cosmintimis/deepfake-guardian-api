@@ -24,6 +24,8 @@ func (app *restfulApi) Routes() http.Handler {
 		r.Put("/v1/{id}", app.updateMedia)
 	})
 
+	router.Handle("/ws", http.HandlerFunc(app.wsHandler))
+
 	return router
 }
 
